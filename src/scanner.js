@@ -33,7 +33,8 @@ module.exports = {
                         artist: metadata.artist[0],
                         album: metadata.album,
                         duration: metadata.duration,
-                        track: metadata.track
+                        track: metadata.track,
+                        mimeType:'audio/mp3'
                     };
                     resolve(song);
                     stream.close();

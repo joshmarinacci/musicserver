@@ -84,6 +84,28 @@ function findOrCreateArtist(artist) {
     })
 }
 
+function findOrCreateAlbum(artist,album) {
+    console.log("searching for album for artist",artist,album)
+    return new Promise((res,rej)=>{
+        db.find({type:'album', artist:artist, name:album},(err,docs) =>{
+            if(err || docs.length <= 0) {
+                console.log(` we need to make an album ${album}`)
+                db.insert({
+                    type:'album',
+                    name:album,
+                    artist:artist
+                },(err,doc)=>{
+                    if(err) return rej(err)
+                    return res(doc)
+                })
+            } else {
+                console.log("the docs are",docs)
+                return res(docs[0])
+            }
+        })
+    })
+}
+
 function insertSong(song) {
     return new Promise((res,rej)=>{
         db.insert(song,(err,doc) =>{
@@ -119,10 +141,15 @@ app.post('/api/songs/upload/:originalFilename', function(req,res) {
     requestToFile(req,filePath)
         .then(scanner.scanFile)
         .then((song)=> {
+            song.type = 'song'
             console.log("inserting the song", song)
             return findOrCreateArtist(song.artist).then((artist) => {
                 song.artist = artist._id
-                return insertSong(song)
+                return findOrCreateAlbum(song.artist,song.album).then((album)=>{
+                    song.album = album._id
+                    return insertSong(song)
+
+                })
             });
         }).then((song)=>{
             res.json({status:'success', song:song})
@@ -134,8 +161,17 @@ app.post('/api/songs/upload/:originalFilename', function(req,res) {
 
 app.get("/api/songs/getfile/:id",(req,res)=> {
     db.find({type:'song', _id:req.params.id},(err,docs)=>{
+        if(err) {
+            console.log("sending failure")
+            res.json({status:'failure', message: err.toString()});
+            return console.log(err)
+        }
+        if(docs.length <= 0) {
+            console.log("sending failure")
+            return res.json({status:'failure', message: "could not find the song"});
+        }
         const song = docs[0]
-        res.type(song.mimeType)
+        res.type(song.mimeType);
         res.sendFile(song.path)
     })
 });

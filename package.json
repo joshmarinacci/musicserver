@@ -13,8 +13,12 @@
     "body-parser": "^1.18.2",
     "cors": "^2.8.4",
     "express": "^4.16.3",
+    "inquirer": "^5.2.0",
     "musicmetadata": "^2.0.5",
     "nedb": "^1.8.0",
+    "player": "^0.6.1",
+    "request-promise": "^4.2.2",
+    "stream-player": "^0.3.0",
     "xmlhttprequest": "^1.8.0"
   }
 }
