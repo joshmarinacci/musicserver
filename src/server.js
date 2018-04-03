@@ -5,10 +5,10 @@ const express = require('express')
 const path = require('path')
 const UPLOADS_DIR = path.join(process.cwd(),"uploads")
 const TEMP_DIR = path.join(process.cwd(),"tmp")
-const Datastore = require('nedb')
+// const Datastore = require('nedb')
 const DB_FILE = path.join(process.cwd(),'music.db')
-const db = new Datastore({filename:DB_FILE, autoload:true})
-const scanner = require('./scanner')
+const Database = require('./database')
+const db = new Database({filename:DB_FILE, autoload:true})
 const PORT = 9872;
 
 //create app
@@ -64,57 +64,6 @@ function requestToFile(req,filePath) {
     });
 }
 
-function findOrCreateArtist(artist) {
-    return new Promise((res,rej)=>{
-        db.find({type:'artist', name:artist},(err,docs) =>{
-            if(err || docs.length <= 0) {
-                console.log(` we need to make an artist ${artist}`)
-                db.insert({
-                    type:'artist',
-                    name:artist
-                },(err,doc)=>{
-                    if(err) return rej(err)
-                    return res(doc)
-                })
-            } else {
-                console.log("the docs are",docs)
-                return res(docs[0])
-            }
-        })
-    })
-}
-
-function findOrCreateAlbum(artist,album) {
-    console.log("searching for album for artist",artist,album)
-    return new Promise((res,rej)=>{
-        db.find({type:'album', artist:artist, name:album},(err,docs) =>{
-            if(err || docs.length <= 0) {
-                console.log(` we need to make an album ${album}`)
-                db.insert({
-                    type:'album',
-                    name:album,
-                    artist:artist
-                },(err,doc)=>{
-                    if(err) return rej(err)
-                    return res(doc)
-                })
-            } else {
-                console.log("the docs are",docs)
-                return res(docs[0])
-            }
-        })
-    })
-}
-
-function insertSong(song) {
-    return new Promise((res,rej)=>{
-        db.insert(song,(err,doc) =>{
-            if(err) return rej(err)
-            return res(doc)
-        })
-    })
-}
-
 app.get('/api/artists/', (req,res) => {
     db.find({type:'artist'}, (err,docs) => {res.json(docs)})
 })
@@ -139,18 +88,9 @@ app.post('/api/songs/upload/:originalFilename', function(req,res) {
     console.log("getting an upload",req.params.originalFilename)
     const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)
     requestToFile(req,filePath)
-        .then(scanner.scanFile)
-        .then((song)=> {
-            song.type = 'song'
-            console.log("inserting the song", song)
-            return findOrCreateArtist(song.artist).then((artist) => {
-                song.artist = artist._id
-                return findOrCreateAlbum(song.artist,song.album).then((album)=>{
-                    song.album = album._id
-                    return insertSong(song)
-
-                })
-            });
+        .then((fpath)=>{
+            console.log("uploaded to path. now need to process")
+            return db.insertSong(fpath)
         }).then((song)=>{
             res.json({status:'success', song:song})
         }).catch((e)=>{

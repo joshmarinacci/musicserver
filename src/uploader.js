@@ -23,23 +23,34 @@ function onlyMP3Files(name) {
 }
 
 function uploadFiles(dirname) {
-    fs.readdirSync(dirname)
+    const files = fs.readdirSync(dirname)
         .filter(onlyMP3Files)
-        .map((filename)=>uploadFile(path.join(dirname,filename)))
+    let prom = Promise.resolve()
+    files.forEach((filename)=>{
+        prom = prom.then(()=> uploadFile(path.join(dirname,filename)))
+    })
+        // .map((filename)=>uploadFile(path.join(dirname,filename)))
+    prom.then(()=>{
+        console.log("done uploading")
+    })
 }
 
 function uploadFile(filepath) {
-    console.log("uploading the file",filepath)
-    const url = `${server}api/songs/upload/some-file`
-    console.log(`uploading ${url}`)
-    const xhr = new XMLHttpRequest();
-    xhr.addEventListener('load',() => {
-        console.log("loaded",xhr.responseText)
+    return new Promise((res,rej)=>{
+        console.log("uploading the file",filepath)
+        const url = `${server}api/songs/upload/some-file`
+        // console.log(`uploading ${url}`)
+        const xhr = new XMLHttpRequest();
+        xhr.addEventListener('load',() => {
+            console.log("sent")
+            res(xhr.responseText)
+        })
+        xhr.addEventListener('error',()=>{
+            console.log("error")
+            rej(this)
+        })
+        xhr.open('POST',url)
+        xhr.send(fs.readFileSync(filepath))
     })
-    xhr.addEventListener('error',()=>{
-        console.log("error")
-    })
-    xhr.open('POST',url)
-    xhr.send(fs.readFileSync(filepath))
 }
 

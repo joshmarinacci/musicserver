@@ -2,8 +2,9 @@ const path = require('path')
 const Datastore = require('nedb')
 const scanner = require('./scanner')
 class Database {
-    constructor() {
-        this.db = new Datastore();//{filename: DB_FILE, autoload: true})
+    constructor(opts) {
+        if(!opts) opts = {}
+        this.db = new Datastore(opts);//{filename: DB_FILE, autoload: true})
         this.TEMP_DIR = path.join(process.cwd(),"tmp_test")
     }
     insertSong(srcpath) {
