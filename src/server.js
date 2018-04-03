@@ -64,6 +64,35 @@ function requestToFile(req,filePath) {
     });
 }
 
+function findOrCreateArtist(artist) {
+    return new Promise((res,rej)=>{
+        db.find({type:'artist', name:artist},(err,docs) =>{
+            if(err || docs.length <= 0) {
+                console.log(` we need to make an artist ${artist}`)
+                db.insert({
+                    type:'artist',
+                    name:artist
+                },(err,doc)=>{
+                    if(err) return rej(err)
+                    return res(doc)
+                })
+            } else {
+                console.log("the docs are",docs)
+                return res(docs[0])
+            }
+        })
+    })
+}
+
+function insertSong(song) {
+    return new Promise((res,rej)=>{
+        db.insert(song,(err,doc) =>{
+            if(err) return rej(err)
+            return res(doc)
+        })
+    })
+}
+
 app.get('/api/artists/', (req,res) => {
     db.find({type:'artist'}, (err,docs) => {res.json(docs)})
 })
@@ -102,35 +131,6 @@ app.post('/api/songs/upload/:originalFilename', function(req,res) {
             res.json({status:'failure', message: e.toString()});
         });
 });
-
-function findOrCreateArtist(artist) {
-    return new Promise((res,rej)=>{
-        db.find({type:'artist', name:artist},(err,docs) =>{
-            if(err || docs.length <= 0) {
-                console.log(` we need to make an artist ${artist}`)
-                db.insert({
-                    type:'artist',
-                    name:artist
-                },(err,doc)=>{
-                    if(err) return rej(err)
-                    return res(doc)
-                })
-            } else {
-                console.log("the docs are",docs)
-                return res(docs[0])
-            }
-        })
-    })
-}
-
-function insertSong(song) {
-    return new Promise((res,rej)=>{
-        db.insert(song,(err,doc) =>{
-            if(err) return rej(err)
-            return res(doc)
-        })
-    })
-}
 
 app.get("/api/songs/getfile/:id",(req,res)=> {
     db.find({type:'song', _id:req.params.id},(err,docs)=>{
