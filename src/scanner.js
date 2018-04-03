@@ -9,9 +9,9 @@ module.exports = {
         return new Promise((resolve,reject) => {
             var stream = fs.createReadStream(file);
             mm(stream, { duration:true }, (err, metadata) => {
-                console.log("scanning", file);
-                console.log("error is ", err);
-                console.log(metadata);
+                // console.log("scanning", file);
+                // console.log("error is ", err);
+                // console.log(metadata);
                 if(err) {
                     reject(err);
                 } else {

@@ -19,6 +19,7 @@
     "player": "^0.6.1",
     "request-promise": "^4.2.2",
     "stream-player": "^0.3.0",
+    "tape": "^4.9.0",
     "xmlhttprequest": "^1.8.0"
   }
 }
