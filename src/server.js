@@ -3,10 +3,12 @@ const bodyParser = require('body-parser')
 const fs = require('fs')
 const express = require('express')
 const path = require('path')
-const UPLOADS_DIR = path.join(process.cwd(),"/uploads")
+const UPLOADS_DIR = path.join(process.cwd(),"uploads")
+const TEMP_DIR = path.join(process.cwd(),"tmp")
 const Datastore = require('nedb')
 const DB_FILE = path.join(process.cwd(),'music.db')
 const db = new Datastore({filename:DB_FILE, autoload:true})
+const scanner = require('./scanner')
 const PORT = 9872;
 
 //create app
@@ -17,6 +19,9 @@ app.set("json spaces",4);
 app.use(cors({origin:true}));
 //assume all bodies will be JSON and parse them automatically
 app.use(bodyParser.json());
+
+if(!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR)
+if(!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR)
 
 function initDB() {
     db.insert({
@@ -43,10 +48,11 @@ function initDB() {
     })
 }
 
-initDB()
+// initDB()
 
 function requestToFile(req,filePath) {
     return new Promise((resolve,reject)=>{
+        console.log("uploading to the path",filePath)
         const file = fs.createWriteStream(filePath, {encoding: 'binary'});
         req.on('data', function(chunk) {
             file.write(chunk);
@@ -78,16 +84,53 @@ app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) => {
     db.find({type: 'song', album:req.params.albumid}, (err,docs)=>{res.json(docs)})
 })
 
-app.post('/api/songs/upload', function(req,res) {
-    const filePath = path.join(UPLOADS_DIR,"sometempfile2"+Math.random());
-    requestToFile(req,filePath).then(Scanner.scanFile).then(insertSong).then((status)=>{
-        console.log("imported into the database",status);
-        res.json({status: 'success', keys:status.generated_keys});
-    }).catch((e)=>{
-        console.log("problem" + e);
-        res.json({status:'failure', message: e.toString()});
-    });
+app.post('/api/songs/upload/:originalFilename', function(req,res) {
+    console.log("getting an upload",req.params.originalFilename)
+    const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)
+    requestToFile(req,filePath)
+        .then(scanner.scanFile)
+        .then((song)=> {
+            console.log("inserting the song", song)
+            return findOrCreateArtist(song.artist).then((artist) => {
+                song.artist = artist._id
+                return insertSong(song)
+            });
+        }).then((song)=>{
+            res.json({status:'success', song:song})
+        }).catch((e)=>{
+            console.log("problem" + e);
+            res.json({status:'failure', message: e.toString()});
+        });
 });
+
+function findOrCreateArtist(artist) {
+    return new Promise((res,rej)=>{
+        db.find({type:'artist', name:artist},(err,docs) =>{
+            if(err || docs.length <= 0) {
+                console.log(` we need to make an artist ${artist}`)
+                db.insert({
+                    type:'artist',
+                    name:artist
+                },(err,doc)=>{
+                    if(err) return rej(err)
+                    return res(doc)
+                })
+            } else {
+                console.log("the docs are",docs)
+                return res(docs[0])
+            }
+        })
+    })
+}
+
+function insertSong(song) {
+    return new Promise((res,rej)=>{
+        db.insert(song,(err,doc) =>{
+            if(err) return rej(err)
+            return res(doc)
+        })
+    })
+}
 
 app.get("/api/songs/getfile/:id",(req,res)=> {
     db.find({type:'song', _id:req.params.id},(err,docs)=>{
