@@ -8,9 +8,10 @@ class Database {
         this.TEMP_DIR = path.join(process.cwd(),"tmp_test")
     }
     insertSong(srcpath) {
-        console.log("importing source path", srcpath)
+        console.log("scanning source path", srcpath)
         return scanner.scanFile(srcpath)
             .then((song) => {
+                console.log("got song",song)
                 song.type = 'song'
                 return this.findOrCreateArtist(song.artist).then((artist) => {
                     song.artist = artist._id

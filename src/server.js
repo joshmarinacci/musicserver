@@ -23,33 +23,6 @@ app.use(bodyParser.json());
 if(!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR)
 if(!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR)
 
-function initDB() {
-    db.insert({
-        type:'artist',
-        name:'Adele'
-    }, (err,artist)=>{
-        console.log("inserted",artist)
-        db.insert({
-            type:'album',
-            name:'25',
-            artist:artist._id
-        }, (err,album)=>{
-            console.log('inserted',album)
-            db.insert({
-                type:'song',
-                album:album._id,
-                name:'Hello',
-                mimeType:'audio/mp3',
-                path:'/Users/josh/Music/iTunes/iTunes Media/Music/Adele/25/01 Hello.mp3'
-            },(err,song) => {
-                console.log("inserted",song)
-            })
-        })
-    })
-}
-
-// initDB()
-
 function requestToFile(req,filePath) {
     return new Promise((resolve,reject)=>{
         console.log("uploading to the path",filePath)
@@ -64,25 +37,20 @@ function requestToFile(req,filePath) {
     });
 }
 
-app.get('/api/artists/', (req,res) => {
-    db.find({type:'artist'}, (err,docs) => {res.json(docs)})
-})
+app.get('/api/artists/', (req,res) =>
+    db.findPromise({type:'artist'}).then(docs=>res.json(docs)))
 
-app.get('/api/artists/:artistid', (req,res) => {
-    db.find({type: 'artist', _id:req.params.artistid}, (err,doc)=>{res.json(doc)})
-})
+app.get('/api/artists/:artistid', (req,res) =>
+    db.findPromise({type: 'artist', _id:req.params.artistid}).then(doc=>res.json(doc)))
 
-app.get('/api/artists/:artistid/albums', (req,res) => {
-    db.find({type: 'album', artist:req.params.artistid}, (err,docs)=>{res.json(docs)})
-})
+app.get('/api/artists/:artistid/albums', (req,res) =>
+    db.findPromise({type: 'album', artist:req.params.artistid}).then(docs=>res.json(docs)))
 
-app.get('/api/artists/:artistid/albums/:albumid', (req,res) => {
-    db.find({type: 'album', _id:req.params.albumid}, (err,docs)=>{res.json(docs)})
-})
+app.get('/api/artists/:artistid/albums/:albumid', (req,res) =>
+    db.findPromise({type: 'album', _id:req.params.albumid}).then(docs=>res.json(docs)))
 
-app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) => {
-    db.find({type: 'song', album:req.params.albumid}, (err,docs)=>{res.json(docs)})
-})
+app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
+    db.findPromise({type: 'song', album:req.params.albumid}).then(docs=>res.json(docs)))
 
 app.post('/api/songs/upload/:originalFilename', function(req,res) {
     console.log("getting an upload",req.params.originalFilename)
@@ -100,20 +68,17 @@ app.post('/api/songs/upload/:originalFilename', function(req,res) {
 });
 
 app.get("/api/songs/getfile/:id",(req,res)=> {
-    db.find({type:'song', _id:req.params.id},(err,docs)=>{
-        if(err) {
-            console.log("sending failure")
+    db.findPromise({type:'song', _id:req.params.id})
+        .then(docs =>{
+            if(docs.length <= 0) return res.json({status:'failure', message: "could not find the song"});
+            const song = docs[0]
+            res.type(song.mimeType);
+            res.sendFile(song.path)
+        })
+        .catch((err)=>{
+            console.log("sending failure",err)
             res.json({status:'failure', message: err.toString()});
-            return console.log(err)
-        }
-        if(docs.length <= 0) {
-            console.log("sending failure")
-            return res.json({status:'failure', message: "could not find the song"});
-        }
-        const song = docs[0]
-        res.type(song.mimeType);
-        res.sendFile(song.path)
-    })
+        })
 });
 
 app.post('/api/songs/update/:id', function(req,res) {
@@ -139,7 +104,9 @@ app.post('/api/songs/delete/:id', (req,res) => {
 });
 
 
-app.listen(PORT, function() {
-    console.log(`music server starting with port ${PORT} and uploads dir ${UPLOADS_DIR} and database ${DB_FILE}`)
-});
+app.listen(PORT, () => console.log(`
+    music server http://localhost:${PORT}/ 
+    music dir ${UPLOADS_DIR} 
+    database  ${DB_FILE}`))
+
 
