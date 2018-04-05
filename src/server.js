@@ -25,14 +25,15 @@ if(!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR)
 
 function requestToFile(req,filePath) {
     return new Promise((resolve,reject)=>{
-        console.log("uploading to the path",filePath)
         const file = fs.createWriteStream(filePath, {encoding: 'binary'});
+        file.on('finish',()=>{
+            resolve(filePath)
+        })
         req.on('data', function(chunk) {
             file.write(chunk);
         });
         req.on('end', function() {
             file.end();
-            resolve(filePath);
         });
     });
 }
@@ -53,14 +54,18 @@ app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
     db.findPromise({type: 'song', album:req.params.albumid}).then(docs=>res.json(docs)))
 
 app.post('/api/songs/upload/:originalFilename', function(req,res) {
-    console.log("getting an upload",req.params.originalFilename)
     const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)
     requestToFile(req,filePath)
         .then((fpath)=>{
-            console.log("uploaded to path. now need to process")
             return db.insertSong(fpath)
         }).then((song)=>{
-            res.json({status:'success', song:song})
+            if(song.isDuplicate) {
+                console.log("this song is a duplicate. deleting it",song.path);
+                fs.unlinkSync(song.path)
+                return res.json({status:'failure', message:'duplicate song', song:song})
+            }
+            console.log('not duplicate')
+            return res.json({status:'success', song:song})
         }).catch((e)=>{
             console.log("problem" + e);
             res.json({status:'failure', message: e.toString()});

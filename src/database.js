@@ -8,17 +8,22 @@ class Database {
         this.TEMP_DIR = path.join(process.cwd(),"tmp_test")
     }
     insertSong(srcpath) {
-        console.log("scanning source path", srcpath)
         return scanner.scanFile(srcpath)
             .then((song) => {
-                console.log("got song",song)
                 song.type = 'song'
-                return this.findOrCreateArtist(song.artist).then((artist) => {
-                    song.artist = artist._id
-                    return this.findOrCreateAlbum(song.artist, song.album).then((album) => {
-                        song.album = album._id
-                        return this.insertPromise(song)
-                    })
+                return this.isDuplicate(song).then(dup=>{
+                    if (dup) {
+                        song.isDuplicate = true
+                        return song
+                    } else {
+                        return this.findOrCreateArtist(song.artist).then((artist) => {
+                            song.artist = artist._id
+                            return this.findOrCreateAlbum(song.artist, song.album).then((album) => {
+                                song.album = album._id
+                                return this.insertPromise(song)
+                            })
+                        })
+                    }
                 })
             });
     }
@@ -49,16 +54,14 @@ class Database {
         })
     }
     findOrCreateArtist(artist) {
-        // console.log(`checking for artist -${artist}-`)
         return this.findPromise({type:'artist',name:artist})
             .then((artists)=>{
                 if(!artists || artists.length !== 1) {
-                    // console.log('need to create a new artist')
                     return this.insertPromise({
                         type:'artist',
                         name:artist
                     }).then((a)=>{
-                        console.log('created',a)
+                        console.log('created artist',a.name)
                         return a;
                     })
                 } else {
@@ -71,19 +74,22 @@ class Database {
         return this.findPromise({type:'album',name:album, artist:artist})
             .then((albums)=>{
                 if(!albums || albums.length !== 1) {
-                    // console.log('need to create a new album')
                     return this.insertPromise({
                         type:'album',
                         name:album,
                         artist:artist
                     }).then((a)=>{
-                        console.log('created',a)
+                        console.log('created album',a.name)
                         return a;
                     })
                 } else {
                     return albums[0]
                 }
             })
+    }
+
+    isDuplicate(song) {
+        return this.findPromise({fileSizeBytes:song.fileSizeBytes}).then((docs)=>(docs.length!==0))
     }
 }
 module.exports = Database

@@ -27,11 +27,12 @@ function uploadFiles(dirname) {
         .filter(onlyMP3Files)
     let prom = Promise.resolve()
     files.forEach((filename)=>{
-        prom = prom.then(()=> uploadFile(path.join(dirname,filename)))
+        prom = prom.then((ret)=> {
+            return uploadFile(path.join(dirname,filename))
+        })
     })
-        // .map((filename)=>uploadFile(path.join(dirname,filename)))
-    prom.then(()=>{
-        console.log("done uploading")
+    prom.then((ret)=>{
+        console.log("done uploading",ret)
     })
 }
 

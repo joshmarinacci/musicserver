@@ -8,6 +8,7 @@ function onlyMP3Files(name) {
     return (name.indexOf(".mp3")>0)
 }
 
+
 test('two songs, one artist',(t)=> {
     const DIR = `/Users/josh/Music/iTunes/iTunes Media/Music/John Mayer/Paradise Valley/`
     const db = new DB()
@@ -37,6 +38,30 @@ test('two songs, one artist',(t)=> {
         console.log("error happened",e)
         t.fail()
     })
+})
+
+
+test('same song twice', (t) => {
+    const SONG = '/Users/josh/Music/iTunes/iTunes Media/Music/John Mayer/Paradise Valley/01 Wildfire.mp3'
+    const db = new DB()
+    Promise.resolve()
+        .then(()=>{
+            console.log("inserting the song",SONG)
+            return db.insertSong(SONG)
+        })
+        .then((song)=>{
+            console.log("result of previous song",song)
+            t.equal(song.isDuplicate,undefined)
+            return db.insertSong(SONG)
+        })
+        .then((song)=>{
+            console.log("result of previous song",song)
+            t.equal(song.isDuplicate,true)
+            t.end()
+        }).catch((e)=>{
+            console.log("error happened",e)
+            t.fail()
+        })
 })
 
 function runFunctionPromisesSequentially(proms) {
