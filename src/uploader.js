@@ -6,7 +6,24 @@ if(process.argv.length !== 4) return printUsage()
 
 const server = process.argv[2]
 const dirname = process.argv[3]
-uploadFiles(dirname)
+
+const files = generateFileList(dirname)
+console.log("file list is",files)
+uploadFiles(files).then(()=>{
+    console.log("totally done")
+}).catch((e)=>{
+    console.log('error',e)
+})
+
+function generateFileList(dir) {
+    let finalFiles = []
+    fs.readdirSync(dir).forEach((fname)=>{
+        const fpath = path.join(dir,fname)
+        if(onlyMP3Files(fpath)) finalFiles.push(fpath)
+        if(fs.statSync(fpath).isDirectory())  finalFiles = finalFiles.concat(generateFileList(fpath))
+    })
+    return finalFiles
+}
 
 function printUsage() {
     console.log(`
@@ -22,33 +39,21 @@ function onlyMP3Files(name) {
     return (name.indexOf(".mp3")>0)
 }
 
-function uploadFiles(dirname) {
-    const files = fs.readdirSync(dirname)
-        .filter(onlyMP3Files)
+function uploadFiles(files) {
     let prom = Promise.resolve()
-    files.forEach((filename)=>{
-        prom = prom.then((ret)=> {
-            return uploadFile(path.join(dirname,filename))
-        })
-    })
-    prom.then((ret)=>{
-        console.log("done uploading",ret)
-    })
+    files.forEach((filename)=> prom = prom.then(() => uploadFile(filename)))
+    return prom
 }
 
 function uploadFile(filepath) {
     return new Promise((res,rej)=>{
-        console.log("uploading the file",filepath)
         const url = `${server}api/songs/upload/some-file`
-        // console.log(`uploading ${url}`)
         const xhr = new XMLHttpRequest();
         xhr.addEventListener('load',() => {
-            console.log("sent")
             res(xhr.responseText)
         })
-        xhr.addEventListener('error',()=>{
-            console.log("error")
-            rej(this)
+        xhr.addEventListener('error',(e)=>{
+            rej(xhr.responseText)
         })
         xhr.open('POST',url)
         xhr.send(fs.readFileSync(filepath))
