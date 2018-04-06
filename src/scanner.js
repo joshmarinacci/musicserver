@@ -11,7 +11,7 @@ module.exports = {
                 if(err) return reject(err)
                 const song = {
                     path:file,
-                    mimeType:'audio/mp3',
+                    mimeType:'audio/mpeg',
                     fileSizeBytes: fs.statSync(file).size
                 }
 
