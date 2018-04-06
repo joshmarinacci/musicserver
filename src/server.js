@@ -51,7 +51,7 @@ app.get('/api/artists/:artistid/albums/:albumid', (req,res) =>
     db.findPromise({type: 'album', _id:req.params.albumid}).then(docs=>res.json(docs)))
 
 app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
-    db.findPromise({type: 'song', album:req.params.albumid}).then(docs=>res.json(docs)))
+    db.findPromise({type: 'song', album:req.params.albumid},{track:1}).then(docs=>res.json(docs)))
 
 app.post('/api/songs/upload/:originalFilename', function(req,res) {
     const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)

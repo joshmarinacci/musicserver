@@ -37,9 +37,11 @@ class Database {
     getAllArtists() {
         return this.findPromise({type:'artist'})
     }
-    findPromise(query) {
+    findPromise(query, sort) {
         return new Promise((res,rej)=>{
-            this.db.find(query, (err,docs)=>{
+            let cursor = this.db.find(query);
+            if(sort) cursor = cursor.sort(sort)
+            cursor.exec((err,docs)=>{
                 if(err) return rej(docs)
                 return res(docs)
             })

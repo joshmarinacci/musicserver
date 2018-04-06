@@ -22,6 +22,8 @@ module.exports = {
                 fillIn(song,tags,'title')
                 fillIn(song,tags,'artist')
                 fillIn(song,tags,'album')
+                if(typeof tags.v1.track !== 'undefined') song.track = tags.v1.track
+                if(typeof tags.v2.track !== 'undefined') song.track = tags.v2.track
                 resolve(song)
             })
 
