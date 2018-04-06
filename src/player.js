@@ -55,18 +55,18 @@ request.get({url:BASE_URL+"/artists", json:true})
         console.log("final playlist is",playlist)
         const ids = playlist.songs.map((song)=>song._id)
         const n = ids.indexOf(final.song)
-        console.log("using n",n,ids)
-
-
         const songs = playlist.songs.map((song)=>`${BASE_URL}/songs/getfile/${song._id}`)
-        console.log("songs ",songs)
         player = new Player(songs)
+        player.on('playing',(item)=>{
+            console.log("playing",item)
+        })
+        player.on('playend',(item) =>{
+            console.log("done with playing",item)
+        })
+        player.on('error', function(err){
+            console.log('error playing',err);
+        });
         player.play()
-        // let prom = Promise.resolve()
-        // playlist.songs.forEach((song)=>{
-        //     prom = prom.then(()=> playSong(song._id))
-        // })
-        // return prom
     })
     .catch((e)=>{
         console.log("error",e)
