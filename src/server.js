@@ -39,13 +39,13 @@ function requestToFile(req,filePath) {
 }
 
 app.get('/api/artists/', (req,res) =>
-    db.findPromise({type:'artist'}).then(docs=>res.json(docs)))
+    db.findPromise({type:'artist'},{name:1}).then(docs=>res.json(docs)))
 
 app.get('/api/artists/:artistid', (req,res) =>
     db.findPromise({type: 'artist', _id:req.params.artistid}).then(doc=>res.json(doc)))
 
 app.get('/api/artists/:artistid/albums', (req,res) =>
-    db.findPromise({type: 'album', artist:req.params.artistid}).then(docs=>res.json(docs)))
+    db.findPromise({type: 'album', artist:req.params.artistid},{name:1}).then(docs=>res.json(docs)))
 
 app.get('/api/artists/:artistid/albums/:albumid', (req,res) =>
     db.findPromise({type: 'album', _id:req.params.albumid}).then(docs=>res.json(docs)))
