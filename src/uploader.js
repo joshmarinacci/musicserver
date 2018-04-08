@@ -54,7 +54,13 @@ function uploadFile(filepath) {
                     // console.log("got the response",resp)
                     if (resp.duplicate === false) {
                         console.log("not a duplicate. really uploading",filepath)
-                        return reallyUploadFile(filepath)
+                        return reallyUploadFile(filepath).then((result)=>{
+                            // console.log("result",result)
+                            if(result.status === 'failure') {
+                                console.log(`uploading ${filepath} failed`)
+                                console.log("upload got the result",result)
+                            }
+                        })
                     } else {
                         // console.log("it's a duplicate. skipping")
                     }
@@ -68,7 +74,7 @@ function reallyUploadFile(filepath) {
     return new Promise((res,rej)=>{
         const url = `${server}api/songs/upload/some-file`
         const xhr = new XMLHttpRequest();
-        xhr.addEventListener('load', ()  => res(xhr.responseText))
+        xhr.addEventListener('load', ()  => res(JSON.parse(xhr.responseText)))
         xhr.addEventListener('error',(e) => rej(xhr.responseText))
         xhr.open('POST',url)
         xhr.send(fs.readFileSync(filepath))

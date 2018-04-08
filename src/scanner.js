@@ -26,9 +26,15 @@ module.exports = {
                 if(typeof tags.v1.track !== 'undefined') song.track = tags.v1.track
                 if(typeof tags.v2.track !== 'undefined') song.track = tags.v2.track
 
+                if(!song.artist || !song.album  || !song.title) {
+                    console.log('tags',tags)
+                    return reject(new Error("could not parse metadata for song " + file))
+                }
+
 
                 generateHash(song.path).then((hash)=>{
                     song.hash = hash
+                    // console.log("generated song",song)
                     resolve(song)
                 })
             })
