@@ -40,14 +40,7 @@ function generateHash(filepath) {
     return new Promise((res,rej)=> {
         const hash = crypto.createHash('md5')
         const stream = fs.createReadStream(filepath);
-
-        stream.on('data', function (data) {
-            hash.update(data, 'utf8')
-        })
-
-        stream.on('end', function () {
-            const checksum = hash.digest('hex'); // 34f7a3113803f8ed3b8fd7ce5656ebec
-            res(checksum)
-        })
+        stream.on('data', (data) => hash.update(data, 'utf8'))
+        stream.on('end', () => res(hash.digest('hex')))
     })
 }

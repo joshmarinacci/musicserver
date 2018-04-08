@@ -53,10 +53,10 @@ function uploadFile(filepath) {
                 .then((resp) => {
                     // console.log("got the response",resp)
                     if (resp.duplicate === false) {
-                        console.log("not a duplicate. really uploading")
+                        console.log("not a duplicate. really uploading",filepath)
                         return reallyUploadFile(filepath)
                     } else {
-                        console.log("it's a duplicate. skipping")
+                        // console.log("it's a duplicate. skipping")
                     }
                 })
         }).catch((err)=>{
@@ -68,12 +68,8 @@ function reallyUploadFile(filepath) {
     return new Promise((res,rej)=>{
         const url = `${server}api/songs/upload/some-file`
         const xhr = new XMLHttpRequest();
-        xhr.addEventListener('load',() => {
-            res(xhr.responseText)
-        })
-        xhr.addEventListener('error',(e)=>{
-            rej(xhr.responseText)
-        })
+        xhr.addEventListener('load', ()  => res(xhr.responseText))
+        xhr.addEventListener('error',(e) => rej(xhr.responseText))
         xhr.open('POST',url)
         xhr.send(fs.readFileSync(filepath))
     })
@@ -84,13 +80,10 @@ function verifyNotDuplicate(filepath, hash) {
         const url = `${server}api/songs/checkhash/`
         const xhr = new XMLHttpRequest();
         xhr.addEventListener('load',() => {
-            // console.log("loaded",xhr.status)
             if(xhr.status === 400 || xhr.status === 404) return rej(xhr.responseText)
             res(JSON.parse(xhr.responseText))
         })
-        xhr.addEventListener('error',(e)=>{
-            rej(xhr.responseText)
-        })
+        xhr.addEventListener('error',(e)=>rej(xhr.responseText))
         xhr.open('POST',url)
         xhr.setRequestHeader('Content-Type', 'application/json');
         xhr.send(JSON.stringify({hash:hash}))
@@ -101,11 +94,7 @@ function generateHash(filepath) {
     return new Promise((res,rej)=> {
         const hash = crypto.createHash('md5')
         const stream = fs.createReadStream(filepath);
-
-        stream.on('data', function (data) {
-            hash.update(data, 'utf8')
-        })
-
+        stream.on('data', (data) => hash.update(data, 'utf8'))
         stream.on('end',  () => res(hash.digest('hex')))
     })
 }
