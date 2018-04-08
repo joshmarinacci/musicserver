@@ -3,6 +3,7 @@
  */
 const fs = require('fs');
 const id3 = require('id3js')
+const crypto = require('crypto')
 
 module.exports = {
     scanFile: function(file,realFile) {
@@ -24,9 +25,29 @@ module.exports = {
                 fillIn(song,tags,'album')
                 if(typeof tags.v1.track !== 'undefined') song.track = tags.v1.track
                 if(typeof tags.v2.track !== 'undefined') song.track = tags.v2.track
-                resolve(song)
-            })
 
+
+                generateHash(song.path).then((hash)=>{
+                    song.hash = hash
+                    resolve(song)
+                })
+            })
         })
     }
 };
+
+function generateHash(filepath) {
+    return new Promise((res,rej)=> {
+        const hash = crypto.createHash('md5')
+        const stream = fs.createReadStream(filepath);
+
+        stream.on('data', function (data) {
+            hash.update(data, 'utf8')
+        })
+
+        stream.on('end', function () {
+            const checksum = hash.digest('hex'); // 34f7a3113803f8ed3b8fd7ce5656ebec
+            res(checksum)
+        })
+    })
+}

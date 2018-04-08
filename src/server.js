@@ -97,6 +97,11 @@ app.post('/api/songs/update/:id', function(req,res) {
     });
 });
 
+app.post('/api/songs/checkhash', function(req,res) {
+    db.findPromise({type:'song',hash:req.body.hash})
+        .then(docs=> res.json({duplicate: (docs.length >= 1)}))
+})
+
 app.post('/api/songs/delete/:id', (req,res) => {
     console.log("deleting",req.params.id);
     r.table(c.SONGS_TABLE).get(req.params.id).delete().run(c.connection).then((status)=>{
