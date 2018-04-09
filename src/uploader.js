@@ -2,6 +2,9 @@ const fs = require('fs')
 const path = require('path')
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const crypto = require('crypto')
+if(process.argv.length === 3) {
+    return printServerInfo(process.argv[2]).then((info)=>console.log("info",info))
+}
 if(process.argv.length <= 3) return printUsage()
 
 const server = process.argv[2]
@@ -107,3 +110,18 @@ function generateHash(filepath) {
 }
 
 
+function printServerInfo(server) {
+    return new Promise((res,rej)=>{
+        const url = `${server}api/info`
+        console.log("url = ", url)
+        const xhr = new XMLHttpRequest();
+        xhr.addEventListener('load',() => {
+            if(xhr.status === 400 || xhr.status === 404) return rej(xhr.responseText)
+            res(JSON.parse(xhr.responseText))
+        })
+        xhr.addEventListener('error',(e)=>rej(xhr.responseText))
+        xhr.open('GET',url)
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send()
+    })
+}

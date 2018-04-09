@@ -113,6 +113,9 @@ app.post('/api/songs/delete/:id', (req,res) => {
     });
 });
 
+app.get('/api/info', (req,res) => {
+    db.findPromise({type: 'song'}).then( docs => res.json({songsCount:docs.length}))
+})
 
 app.listen(PORT, () => console.log(`
     music server http://localhost:${PORT}/ 
