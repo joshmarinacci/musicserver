@@ -114,7 +114,11 @@ app.post('/api/songs/delete/:id', (req,res) => {
 });
 
 app.get('/api/info', (req,res) => {
-    db.findPromise({type: 'song'}).then( docs => res.json({songsCount:docs.length}))
+    db.findPromise({type: 'song'})
+        .then( docs => {
+            const size = docs.reduce(((a,b)=> a + b.fileSizeBytes),0)
+            res.json({songsCount:docs.length, fileSizeBytes:size})
+        })
 })
 
 app.listen(PORT, () => console.log(`
