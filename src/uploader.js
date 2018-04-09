@@ -2,26 +2,26 @@ const fs = require('fs')
 const path = require('path')
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const crypto = require('crypto')
-
-    if(process.argv.length !== 4) return printUsage()
+if(process.argv.length <= 3) return printUsage()
 
 const server = process.argv[2]
-const dirname = process.argv[3]
+const dirs = process.argv.slice(3)
 
-const files = generateFileList(dirname)
-console.log("file list is",files)
+const files = generateFileList(dirs)
 uploadFiles(files).then(()=>{
     console.log("totally done")
 }).catch((e)=>{
     console.log('error',e)
 })
 
-function generateFileList(dir) {
+function generateFileList(dirs) {
     let finalFiles = []
-    fs.readdirSync(dir).forEach((fname)=>{
-        const fpath = path.join(dir,fname)
-        if(onlyMP3Files(fpath)) finalFiles.push(fpath)
-        if(fs.statSync(fpath).isDirectory())  finalFiles = finalFiles.concat(generateFileList(fpath))
+    dirs.forEach((dir) => {
+        if (onlyMP3Files(dir)) finalFiles.push(dir)
+        if(fs.statSync(dir).isDirectory()) {
+            const files = fs.readdirSync(dir).map((file) => path.join(dir,file))
+            finalFiles = finalFiles.concat(generateFileList(files))
+        }
     })
     return finalFiles
 }
@@ -37,7 +37,7 @@ Example:
 }
 
 function onlyMP3Files(name) {
-    return (name.indexOf(".mp3")>0)
+    return (name.toLowerCase().indexOf(".mp3")>0)
 }
 
 function uploadFiles(files) {
@@ -72,6 +72,7 @@ function uploadFile(filepath) {
 
 function reallyUploadFile(filepath) {
     return new Promise((res,rej)=>{
+        console.log("uploading",filepath)
         const url = `${server}api/songs/upload/some-file`
         const xhr = new XMLHttpRequest();
         xhr.addEventListener('load', ()  => res(JSON.parse(xhr.responseText)))
