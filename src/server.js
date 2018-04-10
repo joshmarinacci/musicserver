@@ -51,7 +51,9 @@ app.get('/api/artists/:artistid/albums/:albumid', (req,res) =>
     db.findPromise({type: 'album', _id:req.params.albumid}).then(docs=>res.json(docs)))
 
 app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
-    db.findPromise({type: 'song', album:req.params.albumid},{track:1}).then(docs=>res.json(docs)))
+    db.findPromise({type: 'song', album:req.params.albumid})
+        .then(docs => sortTracks(docs))
+        .then(docs=>res.json(docs)))
 
 app.post('/api/songs/upload/:originalFilename', function(req,res) {
     const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)
@@ -127,3 +129,15 @@ app.listen(PORT, () => console.log(`
     database  ${DB_FILE}`))
 
 
+
+
+function sortTracks(docs) {
+    docs = docs.slice()
+    docs.sort((A,B)=> trackPrefix(A.track) - trackPrefix(B.track))
+    return docs
+}
+
+function trackPrefix(str) {
+    let n = str.indexOf('/')
+    return (n>=0)?str.substring(0,n):str
+}
