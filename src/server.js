@@ -9,7 +9,7 @@ const TEMP_DIR = path.join(process.cwd(),"tmp")
 const DB_FILE = path.join(process.cwd(),'music.db')
 const Database = require('./database')
 const db = new Database({filename:DB_FILE, autoload:true})
-const PORT = 9872;
+const PORT = 19872;
 
 //create app
 const app = express();
