@@ -138,6 +138,7 @@ function sortTracks(docs) {
 }
 
 function trackPrefix(str) {
+    if(!str.indexOf) return str
     let n = str.indexOf('/')
     return (n>=0)?str.substring(0,n):str
 }
