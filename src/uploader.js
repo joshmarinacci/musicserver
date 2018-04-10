@@ -20,6 +20,7 @@ uploadFiles(files).then(()=>{
 function generateFileList(dirs) {
     let finalFiles = []
     dirs.forEach((dir) => {
+        if (skip(dir)) return
         if (onlyMP3Files(dir)) finalFiles.push(dir)
         if(fs.statSync(dir).isDirectory()) {
             const files = fs.readdirSync(dir).map((file) => path.join(dir,file))
@@ -41,6 +42,12 @@ Example:
 
 function onlyMP3Files(name) {
     return (name.toLowerCase().indexOf(".mp3")>0)
+}
+
+function skip(name) {
+    if(name.indexOf('.DS_Store') >=0) return true
+    if(name.indexOf('.AppleDouble')>=0) return true
+    return false
 }
 
 function uploadFiles(files) {
