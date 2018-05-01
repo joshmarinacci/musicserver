@@ -15,7 +15,7 @@ module.exports = {
                     resolve(info)
                 },
                 onError: function (e) {
-                    // console.log("error")
+                    console.log("error",e)
                     reject(e)
                 }
             })

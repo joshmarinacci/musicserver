@@ -11,8 +11,18 @@ const server = process.argv[2]
 const dirs = process.argv.slice(3)
 
 const files = generateFileList(dirs)
+const failed = []
+const duplicates = []
+const uploaded = []
+console.log(`uploading ${files.length} files`)
 uploadFiles(files).then(()=>{
-    console.log("totally done")
+    console.log("=========")
+    console.log(`uploaded   ${uploaded.length}`)
+    console.log(`duplicates ${duplicates.length}`)
+    if(failed.length > 0) {
+        console.log(`failed to upload ${failed.length}`)
+        console.log(failed.join("\n"))
+    }
 }).catch((e)=>{
     console.log('error',e)
 })
@@ -61,18 +71,19 @@ function uploadFile(filepath) {
         .then((hash) => {
             return verifyNotDuplicate(filepath, hash)
                 .then((resp) => {
-                    // console.log("got the response",resp)
                     if (resp.duplicate === false) {
-                        console.log("not a duplicate. really uploading",filepath)
+                        console.log(`uploading ${filepath}`)
                         return reallyUploadFile(filepath).then((result)=>{
-                            // console.log("result",result)
                             if(result.status === 'failure') {
-                                console.log(`uploading ${filepath} failed`)
-                                console.log("upload got the result",result)
+                                console.log(`FAILURE uploading ${filepath}`,result)
+                                failed.push(filepath)
+                            } else {
+                                uploaded.push(filepath)
                             }
                         })
                     } else {
-                        // console.log("it's a duplicate. skipping")
+                        console.log(`skipping  ${filepath}`)
+                        duplicates.push(filepath)
                     }
                 })
         }).catch((err)=>{

@@ -69,8 +69,8 @@ app.post('/api/songs/upload/:originalFilename', function(req,res) {
             console.log('not duplicate')
             return res.json({status:'success', song:song})
         }).catch((e)=>{
-            console.log("problem" + e);
-            res.json({status:'failure', message: e.toString()});
+            console.log("problem",e);
+            res.json({status:'failure', message: e});
         });
 });
 
