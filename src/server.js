@@ -90,13 +90,12 @@ app.get("/api/songs/getfile/:id",(req,res)=> {
 
 app.post('/api/songs/update/:id', function(req,res) {
     console.log("updating",req.params.id,'with',req.body);
-    r.table(c.SONGS_TABLE).get(req.params.id).update(req.body).run(c.connection).then((status)=>{
-        console.log("successfully updated",status);
-        res.json({status: 'success', result:status});
-    }).catch((e)=>{
-        console.log("problem" + e);
-        res.json({status:'failure', message: e.toString()});
-    });
+    db.updatePromise({type:'song', _id:req.params.id},req.body).then((docs)=>{
+        return res.json({status:'success', song:docs[0]})
+    }).catch((err)=>{
+        console.log("sending failure",err)
+        res.json({status:'failure', message: err.toString()});
+    })
 });
 
 app.post('/api/songs/checkhash', function(req,res) {
