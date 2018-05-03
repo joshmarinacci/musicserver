@@ -1,6 +1,7 @@
 const cors = require('cors')
 const bodyParser = require('body-parser')
 const fs = require('fs')
+const paths = require('path')
 const express = require('express')
 const path = require('path')
 const UPLOADS_DIR = path.join(process.cwd(),"uploads")
@@ -74,6 +75,39 @@ app.post('/api/songs/upload/:originalFilename', function(req,res) {
         });
 });
 
+app.get("/api/songs/getinfo/:id",(req,res)=> {
+    db.findPromise({type:'song', _id:req.params.id})
+        .then((docs)=> {
+            if (docs.length <= 0)
+                return res.json({status: 'failure', message: "could not find the song"});
+            const song = docs[0]
+            res.json(song)
+        })
+        .catch((err)=>{
+            console.log("sending failure",err)
+            res.json({status:'failure', message: err.toString()});
+        })
+})
+app.get("/api/songs/getart/:id",(req,res)=> {
+    db.findPromise({type:'song', _id:req.params.id})
+        .then((docs)=> {
+            if (docs.length <= 0)
+                return res.json({status: 'failure', message: "could not find the song"});
+            const song = docs[0]
+            if(song.picture) {
+                res.type(song.picture.format)
+                const artpath = paths.join(process.cwd(),'artwork',song.picture.id+'.jpg')
+                console.log('sending the art path',artpath)
+                res.sendFile(artpath)
+            } else {
+                res.json({status:'failure', message:'no artwork'})
+            }
+        })
+        .catch((err)=>{
+            console.log("sending failure",err)
+            res.json({status:'failure', message: err.toString()});
+        })
+})
 app.get("/api/songs/getfile/:id",(req,res)=> {
     db.findPromise({type:'song', _id:req.params.id})
         .then(docs =>{

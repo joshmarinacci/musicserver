@@ -2,8 +2,11 @@
  * Created by josh on 1/15/17.
  */
 const fs = require('fs');
+const paths = require('path')
 const id3 = require('jsmediatags')
 const crypto = require('crypto')
+const ART_DIR = paths.join(process.cwd(),'artwork')
+if(!fs.existsSync(ART_DIR)) fs.mkdirSync(ART_DIR)
 
 module.exports = {
     scanFile: function(file,realFile) {
@@ -27,7 +30,27 @@ module.exports = {
                 artist: info.tags.artist,
                 album: info.tags.album,
                 track: info.tags.track,
-                title: info.tags.title
+                title: info.tags.title,
+                year: info.tags.year,
+                genre: info.tags.genre,
+            }
+            if(info.tags.picture) {
+                console.log("got a picture",info.tags.picture)
+                const format = info.tags.picture.format
+                if(format === 'image/jpeg') {
+                    const byteArray = new Uint8Array(info.tags.picture.data);
+                    const buffer = Buffer.from(byteArray)
+                    const artid = Math.floor(Math.random()*10000000)
+                    const filename = `${artid}.jpg`
+                    const path = paths.join(ART_DIR, filename)
+                    console.log('writing to the path', path)
+                    fs.writeFileSync(path, buffer)
+                    console.log("done writing artwork to ", path)
+                    song.picture = {
+                        format: info.tags.picture.format,
+                        id:artid
+                    }
+                }
             }
             if (!song.artist || !song.album || !song.title) {
                 throw new Error("could not parse metadata for song " + file + JSON.stringify(info))
