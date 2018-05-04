@@ -37,7 +37,7 @@ module.exports = {
             if(info.tags.picture) {
                 console.log("got a picture",info.tags.picture)
                 const format = info.tags.picture.format
-                if(format === 'image/jpeg') {
+                if(format === 'image/jpeg' || format === 'JPG') {
                     const byteArray = new Uint8Array(info.tags.picture.data);
                     const buffer = Buffer.from(byteArray)
                     const artid = Math.floor(Math.random()*10000000)

@@ -2,7 +2,7 @@ const id3 = require('jsmediatags')
 const file = process.argv[2]
 // console.log("processing the file",file);
 new id3.Reader(file)
-    .setTagsToRead(["title", "artist"])
+    // .setTagsToRead(["title", "artist"])
     .read({
     onSuccess: function (info) {
         console.log("success", info)
