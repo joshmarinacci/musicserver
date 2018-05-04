@@ -2,6 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const crypto = require('crypto')
+const scanner = require('./scanner')
 if(process.argv.length === 3) {
     return printServerInfo(process.argv[2]).then((info)=>console.log("info",info))
 }
@@ -72,16 +73,21 @@ function uploadFile(filepath) {
             return verifyNotDuplicate(filepath, hash)
                 .then((resp) => {
                     if (resp.duplicate === false) {
-                        return reallyUploadFile(filepath).then((result)=>{
-                            console.log("got result",result)
-                            if(result.status === 'failure') {
-                                console.log(`FAILURE uploading ${filepath}`,result)
-                                failed.push(filepath)
+                        return scanner.scanFile(filepath).then((song)=>{
+                            if(!song.picture) {
+                                console.log(`artwork is missing. skipping ${filepath}`)
                             } else {
-                                if(!result.song.picture) {
-                                    console.log('WARNING: no picture for song', result.song)
-                                }
-                                uploaded.push(filepath)
+                                return reallyUploadFile(filepath).then((result) => {
+                                    if (result.status === 'failure') {
+                                        console.log(`FAILURE uploading ${filepath}`, result)
+                                        failed.push(filepath)
+                                    } else {
+                                        if (!result.song.picture) {
+                                            console.log('WARNING: no picture for song', result.song)
+                                        }
+                                        uploaded.push(filepath)
+                                    }
+                                })
                             }
                         })
                     } else {

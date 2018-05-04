@@ -11,7 +11,6 @@ if(!fs.existsSync(ART_DIR)) fs.mkdirSync(ART_DIR)
 module.exports = {
     scanFile: function(file,realFile) {
         return new Promise((resolve,reject) => {
-            console.log('reading')
             id3.read(file, {
                 onSuccess: function (info) {
                     // console.log("success", info)
@@ -35,7 +34,7 @@ module.exports = {
                 genre: info.tags.genre,
             }
             if(info.tags.picture) {
-                console.log("got a picture",info.tags.picture)
+                // console.log("got a picture",info.tags.picture)
                 const format = info.tags.picture.format
                 if(format === 'image/jpeg' || format === 'JPG') {
                     const byteArray = new Uint8Array(info.tags.picture.data);
