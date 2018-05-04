@@ -72,12 +72,15 @@ function uploadFile(filepath) {
             return verifyNotDuplicate(filepath, hash)
                 .then((resp) => {
                     if (resp.duplicate === false) {
-                        console.log(`uploading ${filepath}`)
                         return reallyUploadFile(filepath).then((result)=>{
+                            console.log("got result",result)
                             if(result.status === 'failure') {
                                 console.log(`FAILURE uploading ${filepath}`,result)
                                 failed.push(filepath)
                             } else {
+                                if(!result.song.picture) {
+                                    console.log('WARNING: no picture for song', result.song)
+                                }
                                 uploaded.push(filepath)
                             }
                         })
