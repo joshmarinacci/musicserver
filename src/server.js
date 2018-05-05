@@ -56,6 +56,15 @@ app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
         .then(docs => sortTracks(docs))
         .then(docs=>res.json(docs)))
 
+app.get('/api/albums/', (req,res) =>
+    db.findPromise({type: 'album'}).then(docs=>res.json(docs)))
+
+app.get('/api/albums/:albumid/songs', (req,res) =>
+    db.findPromise({type: 'song', album:req.params.albumid, deleted: { $ne:true}})
+        .then(docs => sortTracks(docs))
+        .then(docs=>res.json(docs)))
+
+
 app.post('/api/songs/upload/:originalFilename', function(req,res) {
     const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)
     requestToFile(req,filePath)
@@ -160,6 +169,12 @@ app.post('/api/songs/delete/:id', (req,res) => {
         res.json({status:'failure', message: e.toString()});
     });
 });
+
+app.get('/api/songs/', (req,res) =>
+    db.findPromise({type: 'song', deleted: { $ne:true}})
+        .then(docs => sortTracks(docs))
+        .then(docs=>res.json(docs)))
+
 
 app.get('/api/info', (req,res) => {
     db.findPromise({type: 'song'})
