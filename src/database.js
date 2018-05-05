@@ -58,8 +58,8 @@ class Database {
     updatePromise(query, fields) {
         return new Promise((res,rej)=>{
             console.log("setting the fields",fields)
-            this.db.update(query,{$set:fields},{multi:true,returnUpdatedDocs:true}, (err, numReplaced)=>{
-                console.log("done updating",err,numReplaced)
+            this.db.update(query,{$set:fields},{multi:true,returnUpdatedDocs:true}, (err, numReplaced,docs)=>{
+                console.log("done updating",err,numReplaced,docs)
                 if(err) return rej(err)
                 res(numReplaced)
             })

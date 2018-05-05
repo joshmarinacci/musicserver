@@ -52,7 +52,7 @@ app.get('/api/artists/:artistid/albums/:albumid', (req,res) =>
     db.findPromise({type: 'album', _id:req.params.albumid}).then(docs=>res.json(docs)))
 
 app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
-    db.findPromise({type: 'song', album:req.params.albumid})
+    db.findPromise({type: 'song', album:req.params.albumid, deleted: { $ne:true}})
         .then(docs => sortTracks(docs))
         .then(docs=>res.json(docs)))
 
@@ -137,6 +137,19 @@ app.post('/api/songs/checkhash', function(req,res) {
         .then(docs=> res.json({duplicate: (docs.length >= 1)}))
 })
 
+app.post('/api/songs/delete', (req,res)=>{
+    console.log("deleting songs",req.body)
+    const query = {
+        type:'song',
+        _id:{ $in:req.body}
+    }
+    db.updatePromise(query,{deleted:true}).then(count=>{
+        return res.json({status:'success', deleted:count})
+    }).catch((err)=>{
+        console.log("sending failure",err)
+        res.json({status:'failure', message: err.toString()});
+    })
+})
 app.post('/api/songs/delete/:id', (req,res) => {
     console.log("deleting",req.params.id);
     r.table(c.SONGS_TABLE).get(req.params.id).delete().run(c.connection).then((status)=>{
