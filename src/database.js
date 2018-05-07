@@ -20,7 +20,8 @@ class Database {
                             song.artist = artist._id
                             return this.findOrCreateAlbum(song.artist, song.album).then((album) => {
                                 song.album = album._id
-                                return this.insertPromise(song)
+                                return this.updateAlbumArt(song,album)
+                                    .then(()=>this.insertPromise(song))
                             })
                         })
                     }
@@ -98,6 +99,12 @@ class Database {
                     return albums[0]
                 }
             })
+    }
+    updateAlbumArt (song, album)  {
+        if(song.picture && !album.picture) {
+            console.log("song has a picture and the album doesnt")
+            return this.updatePromise({_id:album._id},{picture:song.picture})
+        }
     }
 
     isDuplicate(song) {

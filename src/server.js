@@ -117,6 +117,16 @@ app.get("/api/songs/getart/:id",(req,res)=> {
             res.json({status:'failure', message: err.toString()});
         })
 })
+app.get('/api/artwork/:id',(req,res)=>{
+    const artpath = paths.join(process.cwd(),'artwork',req.params.id+'.jpg')
+    console.log('sending the art path',artpath)
+    try {
+        res.sendFile(artpath)
+    } catch (err) {
+        console.log("sending failure",err)
+        res.json({status:'failure', message: err.toString()});
+    }
+})
 app.get("/api/songs/getfile/:id",(req,res)=> {
     db.findPromise({type:'song', _id:req.params.id})
         .then(docs =>{
@@ -159,16 +169,6 @@ app.post('/api/songs/delete', (req,res)=>{
         res.json({status:'failure', message: err.toString()});
     })
 })
-app.post('/api/songs/delete/:id', (req,res) => {
-    console.log("deleting",req.params.id);
-    r.table(c.SONGS_TABLE).get(req.params.id).delete().run(c.connection).then((status)=>{
-        console.log("successfully deleted",status);
-        res.json({status: 'success', result:status});
-    }).catch((e)=>{
-        console.log("problem" + e);
-        res.json({status:'failure', message: e.toString()});
-    });
-});
 
 app.get('/api/songs/', (req,res) =>
     db.findPromise({type: 'song', deleted: { $ne:true}})
