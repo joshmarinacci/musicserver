@@ -104,6 +104,8 @@ class Database {
         if(song.picture && !album.picture) {
             console.log("song has a picture and the album doesnt")
             return this.updatePromise({_id:album._id},{picture:song.picture})
+        } else {
+            return Promise.resolve()
         }
     }
 
