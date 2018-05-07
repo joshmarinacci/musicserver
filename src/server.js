@@ -64,6 +64,10 @@ app.get('/api/albums/:albumid/songs', (req,res) =>
         .then(docs => sortTracks(docs))
         .then(docs=>res.json(docs)))
 
+app.post('/api/albums/:albumid/update', (req,res) =>
+    db.updatePromise({type:'album', _id:req.params.albumid},req.body)
+        .then((docs)=> res.json({status:'success', song:docs[0]}))
+        .catch((err)=> res.json({status:'failure', message: err.toString()})))
 
 app.post('/api/songs/upload/:originalFilename', function(req,res) {
     const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)
