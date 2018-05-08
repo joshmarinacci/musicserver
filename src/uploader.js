@@ -66,9 +66,21 @@ function uploadFiles(files) {
     files.forEach((filename)=> prom = prom.then(() => uploadFile(filename)))
     return prom
 }
-
+function checkFilesize(path) {
+    return function(hash) {
+        return new Promise((res,rej)=>{
+            fs.stat(path,(err,info)=>{
+                // console.log("the file info is",info)
+                if(err) return rej(hash)
+                if(info.size === 0) return rej(new Error(`the file ${path} is zero bytes`))
+                return res(hash)
+            })
+        })
+    }
+}
 function uploadFile(filepath) {
     return generateHash(filepath)
+        .then(checkFilesize(filepath))
         .then((hash) => {
             return verifyNotDuplicate(filepath, hash)
                 .then((resp) => {

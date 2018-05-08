@@ -17,7 +17,7 @@ module.exports = {
                     resolve(info)
                 },
                 onError: function (e) {
-                    console.log("error",e)
+                    //console.log("error on song",file,e)
                     reject(e)
                 }
             })
