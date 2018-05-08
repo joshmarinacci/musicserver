@@ -129,8 +129,12 @@ app.get("/api/songs/getart/:id",(req,res)=> {
             res.json({status:'failure', message: err.toString()});
         })
 })
-app.get('/api/artwork/:id',(req,res)=>{
-    const artpath = paths.join(process.cwd(),'artwork',req.params.id+'.jpg')
+app.get('/api/artwork/:id/:format',(req,res)=>{
+    console.log("params",req.params)
+    let ext = '.jpg'
+    if(req.params.format === 'image-png')  ext = '.png'
+    if(req.params.format === 'image-jpg')  ext = '.jpg'
+    const artpath = paths.join(process.cwd(),'artwork',req.params.id+ext)
     console.log('sending the art path',artpath)
     try {
         res.sendFile(artpath)
