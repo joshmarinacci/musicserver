@@ -101,6 +101,14 @@ app.get("/api/songs/getinfo/:id",(req,res)=> {
             res.json({status:'failure', message: err.toString()});
         })
 })
+
+function calculateArtPath(pic) {
+    console.log("the pic is",pic)
+    let ext = '.jpg'
+    if(pic.format === 'image/png') ext = '.png'
+    return  paths.join(process.cwd(),'artwork',pic.id+ext)
+}
+
 app.get("/api/songs/getart/:id",(req,res)=> {
     db.findPromise({type:'song', _id:req.params.id})
         .then((docs)=> {
@@ -109,7 +117,7 @@ app.get("/api/songs/getart/:id",(req,res)=> {
             const song = docs[0]
             if(song.picture) {
                 res.type(song.picture.format)
-                const artpath = paths.join(process.cwd(),'artwork',song.picture.id+'.jpg')
+                const artpath = calculateArtPath(song.picture)
                 console.log('sending the art path',artpath)
                 res.sendFile(artpath)
             } else {

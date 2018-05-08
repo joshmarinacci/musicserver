@@ -50,6 +50,21 @@ module.exports = {
                         id:artid
                     }
                 }
+                if(format.toLowerCase() === 'png') {
+                    const byteArray = new Uint8Array(info.tags.picture.data);
+                    const buffer = Buffer.from(byteArray)
+                    const artid = Math.floor(Math.random()*10000000)
+                    const filename = `${artid}.png`
+                    const path = paths.join(ART_DIR, filename)
+                    console.log('writing to the path', path)
+                    fs.writeFileSync(path, buffer)
+                    console.log("done writing artwork to ", path)
+                    song.picture = {
+                        format: 'image/png',
+                        id:artid
+                    }
+                    console.log("added the PNG artwork",song)
+                }
             }
             if (!song.artist || !song.album || !song.title) {
                 throw new Error("could not parse metadata for song " + file + JSON.stringify(info))
