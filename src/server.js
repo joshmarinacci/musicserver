@@ -40,13 +40,21 @@ function requestToFile(req,filePath) {
 }
 
 app.get('/api/artists/', (req,res) =>
-    db.findPromise({type:'artist'},{name:1}).then(docs=>res.json(docs)))
+    db.findPromise({type:'artist', deleted: { $ne:true}},{name:1}).then(docs=>res.json(docs)))
 
 app.get('/api/artists/:artistid', (req,res) =>
     db.findPromise({type: 'artist', _id:req.params.artistid}).then(doc=>res.json(doc)))
 
 app.get('/api/artists/:artistid/albums', (req,res) =>
-    db.findPromise({type: 'album', artist:req.params.artistid},{name:1}).then(docs=>res.json(docs)))
+    db.findPromise({type: 'album', artist:req.params.artistid, deleted: { $ne:true}},{name:1})
+        .then(docs=>res.json(docs)))
+
+app.post('/api/artists/:artistid/delete', (req,res) => {
+    console.log("deleting the artist with id",req.params.artistid)
+    db.updatePromise({type:'artist', _id:req.params.artistid},{deleted:true}).then(count => {
+        return res.json({status:'success',deleted:count})
+    })
+})
 
 app.get('/api/artists/:artistid/albums/:albumid', (req,res) =>
     db.findPromise({type: 'album', _id:req.params.albumid}).then(docs=>res.json(docs)))
@@ -57,12 +65,19 @@ app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
         .then(docs=>res.json(docs)))
 
 app.get('/api/albums/', (req,res) =>
-    db.findPromise({type: 'album'}).then(docs=>res.json(docs)))
+    db.findPromise({type: 'album', deleted: { $ne:true}}).then(docs=>res.json(docs)))
 
 app.get('/api/albums/:albumid/songs', (req,res) =>
     db.findPromise({type: 'song', album:req.params.albumid, deleted: { $ne:true}})
         .then(docs => sortTracks(docs))
         .then(docs=>res.json(docs)))
+
+app.post('/api/albums/:albumid/delete', (req,res) => {
+    console.log("deleting the album with id",req.params.albumid)
+    db.updatePromise({type:'album', _id:req.params.albumid},{deleted:true}).then(count => {
+        return res.json({status:'success',deleted:count})
+    })
+})
 
 app.post('/api/albums/:albumid/update', (req,res) =>
     db.updatePromise({type:'album', _id:req.params.albumid},req.body)
