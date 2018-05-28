@@ -29,6 +29,25 @@ class Database {
             });
     }
 
+    insertArtwork(srcpath) {
+        console.log("inserting the artwork at",srcpath)
+        const ext = srcpath.substring(srcpath.lastIndexOf('.')+1)
+        console.log("ext is",ext)
+        let format = 'image/unknown'
+        if(ext.toLowerCase() === 'jpg') {
+            format = 'image/jpeg'
+        }
+        if(ext.toLowerCase() === 'png') {
+            format = 'image/png'
+        }
+        const artwork = {
+            type:'artwork',
+            path:srcpath,
+            format:format
+        }
+        return this.insertPromise(artwork)
+    }
+
     getAllSongs() {
         return this.findPromise({type:'song'})
     }

@@ -6,8 +6,8 @@ const express = require('express')
 const path = require('path')
 const UPLOADS_DIR = path.join(process.cwd(),"uploads")
 const TEMP_DIR = path.join(process.cwd(),"tmp")
-// const Datastore = require('nedb')
 const DB_FILE = path.join(process.cwd(),'music.db')
+const ARTWORK_DIR = path.join(process.cwd(),'artwork2')
 const Database = require('./database')
 const db = new Database({filename:DB_FILE, autoload:true})
 const PORT = 19872;
@@ -23,6 +23,7 @@ app.use(bodyParser.json());
 
 if(!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR)
 if(!fs.existsSync(TEMP_DIR)) fs.mkdirSync(TEMP_DIR)
+if(!fs.existsSync(ARTWORK_DIR)) fs.mkdirSync(ARTWORK_DIR)
 
 function requestToFile(req,filePath) {
     return new Promise((resolve,reject)=>{
@@ -84,6 +85,23 @@ app.post('/api/albums/:albumid/update', (req,res) =>
         .then((docs)=> res.json({status:'success', song:docs[0]}))
         .catch((err)=> res.json({status:'failure', message: err.toString()})))
 
+app.get('/api/albums/:albumid/info',(req,res) => {
+    db.findPromise({type:'album', _id:req.params.albumid}).then(docs=>res.json(docs))
+})
+
+app.post('/api/artwork/upload/:ofile', (req,res) => {
+    console.log("uploading artwork")
+    console.log("the original file name is",req.params.ofile)
+    const ofile = req.params.ofile
+    const ext = ofile.substring(ofile.lastIndexOf('.')+1)
+    const filePath = path.join(ARTWORK_DIR,Math.random()+'.'+ext)
+    console.log("the filepath is",filePath)
+    requestToFile(req,filePath)
+        .then(fpath => db.insertArtwork(fpath))
+        .then(artwork => res.json({status:'success', artwork:artwork}))
+        .catch(e => res.json({status:'failure', message:""+e}))
+})
+
 app.post('/api/songs/upload/:originalFilename', function(req,res) {
     const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)
     requestToFile(req,filePath)
@@ -144,19 +162,17 @@ app.get("/api/songs/getart/:id",(req,res)=> {
             res.json({status:'failure', message: err.toString()});
         })
 })
-app.get('/api/artwork/:id/:format',(req,res)=>{
-    console.log("params",req.params)
-    let ext = '.jpg'
-    if(req.params.format === 'image-png')  ext = '.png'
-    if(req.params.format === 'image-jpg')  ext = '.jpg'
-    const artpath = paths.join(process.cwd(),'artwork',req.params.id+ext)
-    console.log('sending the art path',artpath)
-    try {
-        res.sendFile(artpath)
-    } catch (err) {
-        console.log("sending failure",err)
-        res.json({status:'failure', message: err.toString()});
-    }
+app.get('/api/artwork/:id',(req,res)=>{
+    db.findPromise({type:'artwork',_id:req.params.id}).then(docs => {
+        console.log("got the docs",docs)
+        try {
+            res.setHeader("Content-Type", docs[0].format)
+            res.sendFile(docs[0].path)
+        } catch (err) {
+            console.log("sending failure",err)
+            res.json({status:'failure', message: err.toString()});
+        }
+    })
 })
 app.get("/api/songs/getfile/:id",(req,res)=> {
     db.findPromise({type:'song', _id:req.params.id})
