@@ -85,7 +85,8 @@ function uploadFile(filepath) {
             return verifyNotDuplicate(filepath, hash)
                 .then((resp) => {
                     if (resp.duplicate === false) {
-                        return scanner.scanFile(filepath).then((song)=>{
+                        return scanner.scanFile(filepath,null).then((song)=>{
+                            console.log("song is",song)
                             if(!song.picture) {
                                 console.log(`artwork is missing. skipping ${filepath}`)
                             } else {

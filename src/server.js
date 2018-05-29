@@ -135,33 +135,6 @@ app.get("/api/songs/getinfo/:id",(req,res)=> {
         })
 })
 
-function calculateArtPath(pic) {
-    console.log("the pic is",pic)
-    let ext = '.jpg'
-    if(pic.format === 'image/png') ext = '.png'
-    return  paths.join(process.cwd(),'artwork',pic.id+ext)
-}
-
-app.get("/api/songs/getart/:id",(req,res)=> {
-    db.findPromise({type:'song', _id:req.params.id})
-        .then((docs)=> {
-            if (docs.length <= 0)
-                return res.json({status: 'failure', message: "could not find the song"});
-            const song = docs[0]
-            if(song.picture) {
-                res.type(song.picture.format)
-                const artpath = calculateArtPath(song.picture)
-                console.log('sending the art path',artpath)
-                res.sendFile(artpath)
-            } else {
-                res.json({status:'failure', message:'no artwork'})
-            }
-        })
-        .catch((err)=>{
-            console.log("sending failure",err)
-            res.json({status:'failure', message: err.toString()});
-        })
-})
 app.get('/api/artwork/:id',(req,res)=>{
     db.findPromise({type:'artwork',_id:req.params.id}).then(docs => {
         console.log("got the docs",docs)
@@ -217,8 +190,7 @@ app.post('/api/songs/delete', (req,res)=>{
     })
 })
 
-app.get('/api/songs/', (req,res) =>
-    db.findPromise({type: 'song', deleted: { $ne:true}})
+app.get('/api/songs/', (req,res) => db.findAllSongs()
         .then(docs => sortTracks(docs))
         .then(docs=>res.json(docs)))
 
@@ -250,3 +222,5 @@ function trackPrefix(str) {
     let n = str.indexOf('/')
     return (n>=0)?str.substring(0,n):str
 }
+
+db.fixPicturesToArtwork()

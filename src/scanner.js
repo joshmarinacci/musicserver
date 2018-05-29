@@ -5,11 +5,12 @@ const fs = require('fs');
 const paths = require('path')
 const id3 = require('jsmediatags')
 const crypto = require('crypto')
-const ART_DIR = paths.join(process.cwd(),'artwork')
-if(!fs.existsSync(ART_DIR)) fs.mkdirSync(ART_DIR)
+const ARTWORK_DIR = paths.join(process.cwd(),'artwork2')
+if(!fs.existsSync(ARTWORK_DIR)) fs.mkdirSync(ARTWORK_DIR)
 
 module.exports = {
-    scanFile: function(file,realFile) {
+    scanFile: function(file,db) {
+        console.log("scanning",file,db)
         return new Promise((resolve,reject) => {
             id3.read(file, {
                 onSuccess: function (info) {
@@ -33,44 +34,25 @@ module.exports = {
                 year: info.tags.year,
                 genre: info.tags.genre,
             }
-            if(info.tags.picture) {
-                // console.log("got a picture",info.tags.picture)
-                const format = info.tags.picture.format
-                if(format === 'image/jpeg' || format === 'JPG') {
-                    const byteArray = new Uint8Array(info.tags.picture.data);
-                    const buffer = Buffer.from(byteArray)
-                    const artid = Math.floor(Math.random()*10000000)
-                    const filename = `${artid}.jpg`
-                    const path = paths.join(ART_DIR, filename)
-                    // console.log('writing to the path', path)
-                    fs.writeFileSync(path, buffer)
-                    // console.log("done writing artwork to ", path)
-                    song.picture = {
-                        format: info.tags.picture.format,
-                        id:artid
-                    }
-                }
-                if(format.toLowerCase() === 'png') {
-                    const byteArray = new Uint8Array(info.tags.picture.data);
-                    const buffer = Buffer.from(byteArray)
-                    const artid = Math.floor(Math.random()*10000000)
-                    const filename = `${artid}.png`
-                    const path = paths.join(ART_DIR, filename)
-                    // console.log('writing to the path', path)
-                    fs.writeFileSync(path, buffer)
-                    // console.log("done writing artwork to ", path)
-                    song.picture = {
-                        format: 'image/png',
-                        id:artid
-                    }
-                    // console.log("added the PNG artwork",song)
-                }
-            }
+
             if (!song.artist || !song.album || !song.title) {
                 throw new Error("could not parse metadata for song " + file + JSON.stringify(info))
             }
             return generateHash(file).then((hash)=>{
                 song.hash = hash
+                return song
+            }).then((song)=>{
+                if(info.tags.picture) {
+                    if(!db) {
+                        song.picture = true
+                        return song
+                    }
+                    return db.createArtwork(info.tags.picture)
+                        .then(artwork => {
+                            song.artwork = artwork._id
+                            return song
+                        })
+                }
                 return song
             })
         })
