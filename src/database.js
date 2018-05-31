@@ -161,7 +161,32 @@ class Database {
                 console.log("all done upgrading songs!")
             }))
         })
+        this.findAllAlbums().then(albums => {
+            return Promise.all(albums
+                .filter(album => !album.artwork)
+                .map(album => this.albumArtworkFromSongs(album))
+            ).then(()=> console.log("all done upgrading albums"))
+        })
     }
+
+    albumArtworkFromSongs(album) {
+        return this.findPromise({type:'song',album:album._id, deleted: { $ne:true}})
+            .then(songs => {
+                console.log("songs",songs)
+                if(songs.length ===  0) return
+                if(songs[0].artwork) {
+                    console.log('adding artwork')
+                    return this.updatePromise({type:'album', artwork:songs[0].artwork})
+                } else {
+                    return Promise.resolve()
+                }
+            }).then((doc)=>{
+                console.log("updated the album",doc)
+            })
+
+
+    }
+
     songPictureToArtwork(song) {
         console.log('song is',song)
         let ext = 'png'
@@ -193,6 +218,9 @@ class Database {
 
     findAllSongs () {
         return this.findPromise({type: 'song', deleted: { $ne:true}})
+    }
+    findAllAlbums() {
+        return this.findPromise({type:'album', deleted: { $ne:true}})
     }
 
 }
