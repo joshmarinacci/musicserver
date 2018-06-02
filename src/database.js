@@ -104,9 +104,9 @@ class Database {
         return new Promise((res,rej)=>{
             console.log("setting the fields",fields)
             this.db.update(query,{$set:fields},{multi:true,returnUpdatedDocs:true}, (err, numReplaced,docs)=>{
-                console.log("done updating",err,numReplaced,docs)
+                console.log("done updating",numReplaced)
                 if(err) return rej(err)
-                res(numReplaced)
+                res(docs)
             })
         })
     }
@@ -154,18 +154,23 @@ class Database {
     }
 
     fixPicturesToArtwork() {
+        //strip all album artwork
+        // this.updatePromise({type:'album'},{artwork:null}).then(()=>console.log("done nuking"))
+        // return
         this.findAllSongs().then(songs => {
             const toFix = songs.filter(song => song.picture && !song.artwork)
+            console.log(`found ${toFix.length} songs to fix`)
             if(toFix.length < 1) return
             return Promise.all(toFix.map((song)=>this.songPictureToArtwork(song)).then(()=>{
                 console.log("all done upgrading songs!")
             }))
         })
         this.findAllAlbums().then(albums => {
-            return Promise.all(albums
-                .filter(album => !album.artwork)
-                .map(album => this.albumArtworkFromSongs(album))
-            ).then(()=> console.log("all done upgrading albums"))
+            const toFix = albums.filter(album => !album.artwork)
+            console.log(`found ${toFix.length} albums to fix`)
+
+            return Promise.all(toFix.map(album => this.albumArtworkFromSongs(album)))
+                .then(()=> console.log("all done upgrading albums"))
         })
     }
 
@@ -175,8 +180,8 @@ class Database {
                 console.log("songs",songs)
                 if(songs.length ===  0) return
                 if(songs[0].artwork) {
-                    console.log('adding artwork')
-                    return this.updatePromise({type:'album', artwork:songs[0].artwork})
+                    console.log('adding artwork', songs[0].artwork)
+                    return this.updatePromise({type:'album', _id:album._id},{ artwork:songs[0].artwork})
                 } else {
                     return Promise.resolve()
                 }
