@@ -3,13 +3,40 @@ const path = require('path')
 const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const crypto = require('crypto')
 const scanner = require('./scanner')
-if(process.argv.length === 3) {
-    return printServerInfo(process.argv[2]).then((info)=>console.log("info",info))
-}
-if(process.argv.length <= 3) return printUsage()
 
-const server = process.argv[2]
-const dirs = process.argv.slice(3)
+let args = process.argv.slice(2)
+let opts = args.filter(arg => arg.indexOf('--')===0)
+let rest = args.filter(arg => arg.indexOf('--')===-1)
+
+let options = {
+    force:false,
+    server:'https://music.josh.earth/'
+}
+
+opts.forEach(opt=>{
+    // console.log("processing",opt)
+    const parts = opt.split('=')
+    if(parts.length !== 2) {
+        console.log("invalid option",opt)
+        process.exit(-1)
+    }
+    options[parts[0].substring(2)] = parts[1]
+    // console.log("setting",parts[0],parts[1])
+})
+
+if(typeof options.force === 'string') {
+    options.force = options.force.toLowerCase() === 'true'
+}
+
+const dirs = rest
+console.log(`scanning dirs = ${dirs}`)
+console.log("using options",options)
+
+if(options.info) {
+    return printServerInfo(options.server).then((info)=>console.log("info",info))
+}
+
+if(dirs.length < 1) return printUsage()
 
 const files = generateFileList(dirs)
 const failed = []
@@ -78,6 +105,7 @@ function checkFilesize(path) {
         })
     }
 }
+
 function uploadFile(filepath) {
     return generateHash(filepath)
         .then(checkFilesize(filepath))
@@ -89,19 +117,24 @@ function uploadFile(filepath) {
                             console.log("song is",song)
                             if(!song.picture) {
                                 console.log(`artwork is missing. skipping ${filepath}`)
-                            } else {
-                                return reallyUploadFile(filepath).then((result) => {
-                                    if (result.status === 'failure') {
-                                        console.log(`FAILURE uploading ${filepath}`, result)
-                                        failed.push(filepath)
-                                    } else {
-                                        if (!result.song.picture) {
-                                            console.log('WARNING: no picture for song', result.song)
-                                        }
-                                        uploaded.push(filepath)
-                                    }
-                                })
+                                if(options.force) {
+                                    console.log("uploading anyway")
+                                } else {
+                                    return
+                                }
                             }
+                            return reallyUploadFile(filepath).then((result) => {
+                                if (result.status === 'failure') {
+                                    console.log(`FAILURE uploading ${filepath}`, result)
+                                    failed.push(filepath)
+                                } else {
+                                    if (!result.song.picture) {
+                                        console.log('WARNING: no picture for song', result.song)
+                                    }
+                                    uploaded.push(filepath)
+                                }
+                            })
+
                         })
                     } else {
                         console.log(`skipping  ${filepath}`)
@@ -116,7 +149,7 @@ function uploadFile(filepath) {
 function reallyUploadFile(filepath) {
     return new Promise((res,rej)=>{
         console.log("uploading",filepath)
-        const url = `${server}api/songs/upload/some-file`
+        const url = `${options.server}api/songs/upload/some-file`
         const xhr = new XMLHttpRequest();
         xhr.addEventListener('load', ()  => res(JSON.parse(xhr.responseText)))
         xhr.addEventListener('error',(e) => rej(xhr.responseText))
@@ -127,7 +160,7 @@ function reallyUploadFile(filepath) {
 
 function verifyNotDuplicate(filepath, hash) {
     return new Promise((res,rej)=>{
-        const url = `${server}api/songs/checkhash/`
+        const url = `${options.server}api/songs/checkhash/`
         const xhr = new XMLHttpRequest();
         xhr.addEventListener('load',() => {
             if(xhr.status === 400 || xhr.status === 404) return rej(xhr.responseText)
