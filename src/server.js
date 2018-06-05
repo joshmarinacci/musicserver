@@ -40,6 +40,28 @@ function requestToFile(req,filePath) {
     });
 }
 
+app.post('/api/artists/merge',(req,res)=>{
+    console.log("need to merge",req.body)
+    const first = req.body[0]
+    const rest = req.body.slice(1)
+    //final id will be
+    db.updatePromise({type:'album', artist:{ $in:req.body}}, {artist:first})
+        .then((docs)=>{
+            console.log("updated albums",docs)
+            return db.updatePromise({type:'song', artist:{$in:req.body}}, {artist:first})
+        })
+        .then((docs)=> {
+            console.log("updated songs", docs)
+            return db.updatePromise({type:'artist',_id:{$in:rest}},{deleted:true})
+        })
+        .then((deleted)=>{
+            console.log("deleted duplicate artists",deleted)
+            return db.findPromise({type:'artist', _id:first})
+        })
+        .then((docs)=>{
+            res.json({success:true,artist:docs[0]})
+        })
+})
 app.get('/api/artists/', (req,res) =>
     db.findPromise({type:'artist', deleted: { $ne:true}},{name:1}).then(docs=>res.json(docs)))
 

@@ -152,6 +152,7 @@ function checkArtwork(song) {
             return false
         }
     }
+    return true
 }
 
 function reallyUploadFile(filepath) {
