@@ -4,45 +4,50 @@ const XMLHttpRequest = require("xmlhttprequest").XMLHttpRequest
 const crypto = require('crypto')
 const scanner = require('./scanner')
 
-let args = process.argv.slice(2)
-let opts = args.filter(arg => arg.indexOf('--')===0)
-let rest = args.filter(arg => arg.indexOf('--')===-1)
+function calculateOptions(){
+    let args = process.argv.slice(2)
+    let opts = args.filter(arg => arg.indexOf('--')===0)
+    let rest = args.filter(arg => arg.indexOf('--')===-1)
 
-let options = {
-    force:false,
-    server:'https://music.josh.earth/'
-}
-
-opts.forEach(opt=>{
-    // console.log("processing",opt)
-    const parts = opt.split('=')
-    if(parts.length !== 2) {
-        console.log("invalid option",opt)
-        process.exit(-1)
+    let options = {
+        force:false,
+        server:'https://music.josh.earth/'
     }
-    options[parts[0].substring(2)] = parts[1]
-    // console.log("setting",parts[0],parts[1])
-})
 
-if(typeof options.force === 'string') {
-    options.force = options.force.toLowerCase() === 'true'
+    opts.forEach(opt=>{
+        // console.log("processing",opt)
+        const parts = opt.split('=')
+        if(parts.length !== 2) {
+            console.log("invalid option",opt)
+            process.exit(-1)
+        }
+        options[parts[0].substring(2)] = parts[1]
+        // console.log("setting",parts[0],parts[1])
+    })
+
+    if(typeof options.force === 'string') {
+        options.force = options.force.toLowerCase() === 'true'
+    }
+
+    options.dirs = rest
+    return options
 }
 
-const dirs = rest
-console.log(`scanning dirs = ${dirs}`)
+const options = calculateOptions()
+
+
+console.log(`scanning dirs = ${options.dirs}`)
 console.log("using options",options)
 
-if(options.info) {
-    return printServerInfo(options.server).then((info)=>console.log("info",info))
-}
+if(options.info) return printServerInfo(options.server).then((info)=>console.log("info",info))
+if(options.dirs.length < 1) return printUsage()
 
-if(dirs.length < 1) return printUsage()
-
-const files = generateFileList(dirs)
+const files = generateFileList(options.dirs)
 const failed = []
 const duplicates = []
 const uploaded = []
 console.log(`uploading ${files.length} files`)
+
 uploadFiles(files).then(()=>{
     console.log("=========")
     console.log(`uploaded   ${uploaded.length}`)
@@ -72,9 +77,9 @@ function printUsage() {
     console.log(`
 Uploader: uploads a directory of files to the specified server
 Usage:
-   node src/uploader <serveraddress> <dirname>
+   node src/uploader <dirname>
 Example:
-   node src/uploader http://localhost:9872/ ~/Music/iTunes/iTunes\\ Media/Music/Adele/25
+   node src/uploader ~/Music/iTunes/iTunes\\ Media/Music/Adele/25
 `)
 }
 
@@ -93,6 +98,7 @@ function uploadFiles(files) {
     files.forEach((filename)=> prom = prom.then(() => uploadFile(filename)))
     return prom
 }
+
 function checkFilesize(path) {
     return function(hash) {
         return new Promise((res,rej)=>{
@@ -109,41 +115,43 @@ function checkFilesize(path) {
 function uploadFile(filepath) {
     return generateHash(filepath)
         .then(checkFilesize(filepath))
-        .then((hash) => {
-            return verifyNotDuplicate(filepath, hash)
-                .then((resp) => {
-                    if (resp.duplicate === false) {
-                        return scanner.scanFile(filepath,null).then((song)=>{
-                            console.log("song is",song)
-                            if(!song.picture) {
-                                console.log(`artwork is missing. skipping ${filepath}`)
-                                if(options.force) {
-                                    console.log("uploading anyway")
-                                } else {
-                                    return
-                                }
-                            }
-                            return reallyUploadFile(filepath).then((result) => {
-                                if (result.status === 'failure') {
-                                    console.log(`FAILURE uploading ${filepath}`, result)
-                                    failed.push(filepath)
-                                } else {
-                                    if (!result.song.picture) {
-                                        console.log('WARNING: no picture for song', result.song)
-                                    }
-                                    uploaded.push(filepath)
-                                }
-                            })
-
-                        })
-                    } else {
-                        console.log(`skipping  ${filepath}`)
-                        duplicates.push(filepath)
-                    }
-                })
+        .then((hash) => verifyNotDuplicate(filepath, hash))
+        .then((resp) => {
+            if(resp.duplicate === true) {
+                console.log(`skipping  ${filepath}`)
+                duplicates.push(filepath)
+                return
+            }
+            return scanner.scanFile(filepath,null)
+                .then(checkArtwork)
+                .then(go => {
+                    if (!go) return
+                    return reallyUploadFile(filepath).then((result) => {
+                        if (result.status === 'failure') {
+                            console.log(`FAILURE uploading ${filepath}`, result)
+                            failed.push(filepath)
+                        } else {
+                            if (!result.song.picture) console.log('WARNING: no picture for song', result.song)
+                            uploaded.push(filepath)
+                        }
+                    })
+            })
         }).catch((err)=>{
             console.log("error happened",err)
         })
+}
+
+function checkArtwork(song) {
+    console.log("song is",song)
+    if(!song.picture) {
+        console.log(`artwork is missing. skipping ${song.path}`)
+        if(options.force) {
+            console.log("uploading anyway")
+            return true
+        } else {
+            return false
+        }
+    }
 }
 
 function reallyUploadFile(filepath) {
@@ -181,7 +189,6 @@ function generateHash(filepath) {
         stream.on('end',  () => res(hash.digest('hex')))
     })
 }
-
 
 function printServerInfo(server) {
     return new Promise((res,rej)=>{
