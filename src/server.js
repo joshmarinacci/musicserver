@@ -46,9 +46,17 @@ app.get('/api/artists/', (req,res) =>
 app.get('/api/artists/:artistid', (req,res) =>
     db.findPromise({type: 'artist', _id:req.params.artistid}).then(doc=>res.json(doc)))
 
+app.get('/api/artists/:artistid/info', (req,res) =>
+    db.findPromise({type: 'artist', _id:req.params.artistid}).then(doc=>res.json(doc)))
+
 app.get('/api/artists/:artistid/albums', (req,res) =>
     db.findPromise({type: 'album', artist:req.params.artistid, deleted: { $ne:true}},{name:1})
         .then(docs=>res.json(docs)))
+
+app.post('/api/artists/:artistid/update', (req,res) =>
+    db.updatePromise({type:'artist', _id:req.params.artistid},req.body)
+        .then((docs)=> res.json({status:'success', artist:docs[0]}))
+        .catch((err)=> res.json({status:'failure', message: err.toString()})))
 
 app.post('/api/artists/:artistid/delete', (req,res) => {
     console.log("deleting the artist with id",req.params.artistid)
@@ -223,4 +231,4 @@ function trackPrefix(str) {
     return (n>=0)?str.substring(0,n):str
 }
 
-db.fixPicturesToArtwork()
+// db.fixPicturesToArtwork()
