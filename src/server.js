@@ -41,8 +41,10 @@ function requestToFile(req,filePath) {
 }
 
 function verifyAuth (req,res,next) {
-    console.log("verifying the auth",req.headers)
-    if(req.headers['jauth-password'] !== process.env.password) return res.json({status:'failure'})
+    if(req.headers['jauth-password'] !== process.env.password) {
+        console.log("verify failed",req.headers)
+        return res.json({status:'failure'})
+    }
     next()
 }
 

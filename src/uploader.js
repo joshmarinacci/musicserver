@@ -11,7 +11,8 @@ function calculateOptions(){
 
     let options = {
         force:false,
-        server:'https://music.josh.earth/'
+        server:'https://music.josh.earth/',
+        password:null,
     }
 
     opts.forEach(opt=>{
@@ -163,6 +164,7 @@ function reallyUploadFile(filepath) {
         xhr.addEventListener('load', ()  => res(JSON.parse(xhr.responseText)))
         xhr.addEventListener('error',(e) => rej(xhr.responseText))
         xhr.open('POST',url)
+        xhr.setRequestHeader('jauth-password', options.password);
         xhr.send(fs.readFileSync(filepath))
     })
 }
@@ -178,6 +180,7 @@ function verifyNotDuplicate(filepath, hash) {
         xhr.addEventListener('error',(e)=>rej(xhr.responseText))
         xhr.open('POST',url)
         xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.setRequestHeader('jauth-password', options.password);
         xhr.send(JSON.stringify({hash:hash}))
     })
 }
