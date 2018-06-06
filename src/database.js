@@ -40,7 +40,7 @@ class Database {
         let ext = null
         let format = picture.format.toLowerCase()
         if(format === 'image/jpeg' || format === 'jpg') ext = 'jpg'
-        if(format === 'png') ext = 'png'
+        if(format === 'image/png'  || format === 'png') ext = 'png'
         if(!ext) throw new Error("cannot determine the format: " + format)
 
         const byteArray = new Uint8Array(picture.data);
