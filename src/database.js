@@ -155,8 +155,8 @@ class Database {
 
     fixPicturesToArtwork() {
         //strip all album artwork
-        // this.updatePromise({type:'album'},{artwork:null}).then(()=>console.log("done nuking"))
-        // return
+         //this.updatePromise({type:'album'},{artwork:null}).then(()=>console.log("done nuking"))
+         //return
         this.findAllSongs().then(songs => {
             const toFix = songs.filter(song => song.picture && !song.artwork)
             console.log(`found ${toFix.length} songs to fix`)
