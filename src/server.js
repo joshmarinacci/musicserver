@@ -40,7 +40,13 @@ function requestToFile(req,filePath) {
     });
 }
 
-app.post('/api/artists/merge',(req,res)=>{
+function verifyAuth (req,res,next) {
+    console.log("verifying the auth",req.headers)
+    if(req.headers['jauth-password'] !== process.env.password) return res.json({status:'failure'})
+    next()
+}
+
+app.post('/api/artists/merge', verifyAuth, (req,res)=>{
     console.log("need to merge",req.body)
     const first = req.body[0]
     const rest = req.body.slice(1)
@@ -75,12 +81,12 @@ app.get('/api/artists/:artistid/albums', (req,res) =>
     db.findPromise({type: 'album', artist:req.params.artistid, deleted: { $ne:true}},{name:1})
         .then(docs=>res.json(docs)))
 
-app.post('/api/artists/:artistid/update', (req,res) =>
+app.post('/api/artists/:artistid/update', verifyAuth, (req,res) =>
     db.updatePromise({type:'artist', _id:req.params.artistid},req.body)
         .then((docs)=> res.json({status:'success', artist:docs[0]}))
         .catch((err)=> res.json({status:'failure', message: err.toString()})))
 
-app.post('/api/artists/:artistid/delete', (req,res) => {
+app.post('/api/artists/:artistid/delete', verifyAuth, (req,res) => {
     console.log("deleting the artist with id",req.params.artistid)
     db.updatePromise({type:'artist', _id:req.params.artistid},{deleted:true}).then(count => {
         return res.json({status:'success',deleted:count})
@@ -95,7 +101,7 @@ app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
         .then(docs => sortTracks(docs))
         .then(docs=>res.json(docs)))
 
-app.post('/api/albums/merge',(req,res)=>{
+app.post('/api/albums/merge', verifyAuth, (req,res)=>{
     console.log("need to merge",req.body)
     const first = req.body[0]
     const rest = req.body.slice(1)
@@ -121,14 +127,14 @@ app.get('/api/albums/:albumid/songs', (req,res) =>
         .then(docs => sortTracks(docs))
         .then(docs=>res.json(docs)))
 
-app.post('/api/albums/:albumid/delete', (req,res) => {
+app.post('/api/albums/:albumid/delete', verifyAuth, (req,res) => {
     console.log("deleting the album with id",req.params.albumid)
     db.updatePromise({type:'album', _id:req.params.albumid},{deleted:true}).then(count => {
         return res.json({status:'success',deleted:count})
     })
 })
 
-app.post('/api/albums/:albumid/update', (req,res) =>
+app.post('/api/albums/:albumid/update', verifyAuth, (req,res) =>
     db.updatePromise({type:'album', _id:req.params.albumid},req.body)
         .then((docs)=> res.json({status:'success', song:docs[0]}))
         .catch((err)=> res.json({status:'failure', message: err.toString()})))
@@ -137,7 +143,7 @@ app.get('/api/albums/:albumid/info',(req,res) => {
     db.findPromise({type:'album', _id:req.params.albumid}).then(docs=>res.json(docs))
 })
 
-app.post('/api/artwork/upload/:ofile', (req,res) => {
+app.post('/api/artwork/upload/:ofile', verifyAuth, (req,res) => {
     console.log("uploading artwork")
     console.log("the original file name is",req.params.ofile)
     const ofile = req.params.ofile
@@ -150,7 +156,7 @@ app.post('/api/artwork/upload/:ofile', (req,res) => {
         .catch(e => res.json({status:'failure', message:""+e}))
 })
 
-app.post('/api/songs/upload/:originalFilename', function(req,res) {
+app.post('/api/songs/upload/:originalFilename', verifyAuth, function(req,res) {
     const filePath = path.join(TEMP_DIR,`${Math.random()}.mp3`)
     requestToFile(req,filePath)
         .then((fpath)=>{
@@ -209,7 +215,7 @@ app.get("/api/songs/getfile/:id",(req,res)=> {
         })
 });
 
-app.post('/api/songs/update/:id', function(req,res) {
+app.post('/api/songs/update/:id', verifyAuth, function(req,res) {
     console.log("updating",req.params.id,'with',req.body);
     db.updatePromise({type:'song', _id:req.params.id},req.body).then((docs)=>{
         return res.json({status:'success', song:docs[0]})
@@ -219,12 +225,12 @@ app.post('/api/songs/update/:id', function(req,res) {
     })
 });
 
-app.post('/api/songs/checkhash', function(req,res) {
+app.post('/api/songs/checkhash', verifyAuth, function(req,res) {
     db.findPromise({type:'song',hash:req.body.hash})
         .then(docs=> res.json({duplicate: (docs.length >= 1)}))
 })
 
-app.post('/api/songs/delete', (req,res)=>{
+app.post('/api/songs/delete', verifyAuth, (req,res)=>{
     console.log("deleting songs",req.body)
     const query = {
         type:'song',
@@ -254,7 +260,7 @@ app.get('/api/info', (req,res) => {
 app.listen(PORT, () => console.log(`
     music server http://localhost:${PORT}/ 
     music dir ${UPLOADS_DIR} 
-    database  ${DB_FILE}`))
+    database  ${DB_FILE}`, process.env.password))
 
 
 
