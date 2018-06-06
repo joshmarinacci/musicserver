@@ -95,6 +95,24 @@ app.get('/api/artists/:artistid/albums/:albumid/songs', (req,res) =>
         .then(docs => sortTracks(docs))
         .then(docs=>res.json(docs)))
 
+app.post('/api/albums/merge',(req,res)=>{
+    console.log("need to merge",req.body)
+    const first = req.body[0]
+    const rest = req.body.slice(1)
+    //final id will be
+    db.updatePromise({type:'song', album:{ $in:req.body}}, {album:first})
+        .then((docs)=>{
+            console.log("updated songs",docs)
+            return db.updatePromise({type:'album',_id:{$in:rest}},{deleted:true})
+        })
+        .then((deleted)=>{
+            console.log("deleted duplicate album",deleted)
+            return db.findPromise({type:'album', _id:first})
+        })
+        .then((docs)=>{
+            res.json({success:true,album:docs[0]})
+        })
+})
 app.get('/api/albums/', (req,res) =>
     db.findPromise({type: 'album', deleted: { $ne:true}}).then(docs=>res.json(docs)))
 
