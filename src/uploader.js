@@ -13,6 +13,7 @@ function calculateOptions(){
         force:false,
         server:'https://music.josh.earth/',
         password:null,
+        test:false,
     }
 
     opts.forEach(opt=>{
@@ -85,7 +86,9 @@ Example:
 }
 
 function onlyMP3Files(name) {
-    return (name.toLowerCase().indexOf(".mp3")>0)
+    if(name.toLowerCase().indexOf(".mp3")>0) return true
+    if(name.toLowerCase().indexOf(".m4a")>0) return true
+    return false
 }
 
 function skip(name) {
@@ -126,6 +129,10 @@ function uploadFile(filepath) {
             return scanner.scanFile(filepath,null)
                 .then(checkArtwork)
                 .then(go => {
+                    if(options.test === 'true') {
+                        console.log("just fooling. it's a test")
+                        return false
+                    }
                     if (!go) return
                     return reallyUploadFile(filepath).then((result) => {
                         if (result.status === 'failure') {
@@ -143,7 +150,7 @@ function uploadFile(filepath) {
 }
 
 function checkArtwork(song) {
-    console.log("song is",song)
+    // console.log("song is",song)
     if(!song.picture) {
         console.log(`artwork is missing. skipping ${song.path}`)
         if(options.force) {

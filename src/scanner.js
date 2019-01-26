@@ -34,7 +34,9 @@ module.exports = {
                 year: info.tags.year,
                 genre: info.tags.genre,
             }
-
+            if(info.ftyp.trim() === 'M4A') {
+                song.mimeType = 'audio/mp4'
+            }
             if (!song.artist || !song.album || !song.title) {
                 throw new Error("could not parse metadata for song " + file + JSON.stringify(info))
             }
